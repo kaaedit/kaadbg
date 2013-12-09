@@ -181,6 +181,16 @@ class Kdb(bdb.Bdb):
             if self.run_command(frame, obj):
                 break
 
+    def user_call(self, frame, argument_list):
+        if self.in_kdb_code(frame):
+            self.set_step()
+            return
+        if self._wait_for_mainpyfile:
+            return
+        if self.stop_here(frame):
+            self.interaction(frame)
+
+
     def user_line(self, frame):
         if self.in_kdb_code(frame):
             self.set_step()
