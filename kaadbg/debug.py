@@ -9,6 +9,7 @@ import json
 import locale
 import atexit
 import time
+import traceback
 
 DEFAULT_PORT_NO = 28110
 
@@ -46,7 +47,6 @@ def from_utf8(s):
     else:
         return unicode(s, 'utf-8')
 
-import traceback
 
 
 def _p_exc(info, file):
@@ -160,7 +160,8 @@ class Kdb(bdb.Bdb):
         return (type, value)
 
     def interaction(self, frame):
-
+        stack, curindex = self.get_stack(frame, None)
+        curframe = stack[curindex][0]
         frames = []
         for f in inspect.getouterframes(frame):
             _frame, fname, lno, funcname, lines, index = f
@@ -178,7 +179,7 @@ class Kdb(bdb.Bdb):
             if not obj:
                 self.sock.close()
                 break
-            if self.run_command(frame, obj):
+            if self.run_command(curframe, obj):
                 break
 
     def user_call(self, frame, argument_list):
@@ -201,6 +202,22 @@ class Kdb(bdb.Bdb):
                     or frame.f_lineno <= 0):
                 return
             self._wait_for_mainpyfile = False
+
+        self.interaction(frame)
+
+    def user_return(self, frame, return_value):
+        """This function is called when a return trap is set here."""
+
+        if frame is not self.stopframe and frame is self.returnframe:
+            self.set_step()
+            return
+
+        if self.in_kdb_code(frame):
+            self.set_step()
+            return
+
+        if self._wait_for_mainpyfile:
+            return
 
         self.interaction(frame)
 

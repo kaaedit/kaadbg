@@ -7,7 +7,7 @@ def read(fname):
 
 setup(
     name = "kaadbg",
-    version = "0.1.0",
+    version = "0.2.0",
     description='Remote debugger runner for kaa',
     url='https://github.com/kaaedit/kaadbg',
     author='Atsuo Ishimoto',
