@@ -12,6 +12,7 @@ import time
 import traceback
 
 DEFAULT_PORT_NO = 28110
+VERSION = (0,2,0)
 
 port = None
 lock = threading.RLock()
@@ -105,7 +106,12 @@ class Kdb(bdb.Bdb):
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect(('localhost', portno))
+
         return True
+
+    def init(self):
+        self.send((u'version', VERSION))
+        self.send((u'pid', os.getpid()))
 
     def run_command(self, frame, obj):
         type, s = obj

@@ -23,6 +23,8 @@ def run_file(portno):
             int(port),
             socket.AF_UNIX, socket.SOCK_STREAM)
 
+
+    kaadbg.debug.port.init()
     kaadbg.debug.port.exec_file(filename)
 
 
