@@ -214,7 +214,10 @@ class Kdb(bdb.Bdb):
     def user_return(self, frame, return_value):
         """This function is called when a return trap is set here."""
 
-        if frame is not self.stopframe and frame is self.returnframe:
+        if not self.stopframe or not self.returnframe:
+            return
+
+        if frame is self.returnframe:
             self.set_step()
             return
 
