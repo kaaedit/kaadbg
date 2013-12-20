@@ -12,7 +12,7 @@ import time
 import traceback
 
 DEFAULT_PORT_NO = 28110
-VERSION = (0,2,0)
+VERSION = (0,3,0)
 
 port = None
 lock = threading.RLock()
@@ -165,7 +165,7 @@ class Kdb(bdb.Bdb):
         type, value = json.loads(from_utf8(b''.join(data)))
         return (type, value)
 
-    def interaction(self, frame):
+    def interaction(self, event, frame):
         stack, curindex = self.get_stack(frame, None)
         curframe = stack[curindex][0]
         frames = []
@@ -177,7 +177,7 @@ class Kdb(bdb.Bdb):
             lines = [dec_locale(l) for l in lines]
             frames.append((fname, lno, funcname, lines))
 
-        self.send((u'frame', frames))
+        self.send((u'frame', ({'event':event, 'frame':frames})))
 
         lines = []
         while True:
@@ -195,7 +195,7 @@ class Kdb(bdb.Bdb):
         if self._wait_for_mainpyfile:
             return
         if self.stop_here(frame):
-            self.interaction(frame)
+            self.interaction('call', frame)
 
 
     def user_line(self, frame):
@@ -209,7 +209,7 @@ class Kdb(bdb.Bdb):
                 return
             self._wait_for_mainpyfile = False
 
-        self.interaction(frame)
+        self.interaction('line', frame)
 
     def user_return(self, frame, return_value):
         """This function is called when a return trap is set here."""
@@ -228,12 +228,12 @@ class Kdb(bdb.Bdb):
         if self._wait_for_mainpyfile:
             return
 
-        self.interaction(frame)
+        self.interaction('return', frame)
 
     def user_exception(self, frame, exc_info):
         exc = get_tb(exc_info)
         self.send((u'expr', exc))
-        self.interaction(frame)
+        self.interaction('exception', frame)
 
     def in_kdb_code(self, frame):
         if not self._skip_debug:
